@@ -34,7 +34,7 @@ static-code-qa = [
     "Flake8-pyproject",
     "radon",
 ]
-# Installing dev depenendencies in your virtual env makes it so that during development VS Code can 
+# Installing dev depenendencies in your virtual env makes it so that during development VS Code can
 # - surface linting errors
 # - automatically apply formatting
 # - show enhanced autocompletion for stubs libraries
@@ -64,14 +64,14 @@ line-length = 119
 exclude = '''
 /(
     \.venv
-  | venv
+  | venv_mlops
 )/
 '''
 
 [tool.flake8]
 docstring-convention = "all"
 ignore = ["D107", "D212", "E501", "W503", "W605", "D203", "D100"]
-exclude = ["venv"]
+exclude = ["venv_mlops"]
 max-line-length = 119
 
 # radon
