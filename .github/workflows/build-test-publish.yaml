@@ -76,18 +76,22 @@ jobs:
           python-version: 3.8
       - name: Install uv manually
         run: |
-            curl -LsSf https://astral.sh/uv/install.sh | sh
-            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dev dependencies using uv
         run: |
-            export PATH="$HOME/.cargo/bin:$PATH"
-            uv pip install --system .[dev]
+          export PATH="$HOME/.cargo/bin:$PATH"
+          uv venv
+          source .venv/bin/activate
+          uv pip install .[dev]
       - name: Configure git CLI
         run: |
           git config --global user.email "git-bot-user@python-course.com"
           git config --global user.name "sl2902"
       - name: Run tests
         run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          source .venv/bin/activate
           make install
           make test
 
