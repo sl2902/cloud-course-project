@@ -80,6 +80,7 @@ jobs:
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dev dependencies using uv
         run: |
+            export PATH="$HOME/.cargo/bin:$PATH
             uv pip install --system .[dev]
       - name: Configure git CLI
         run: |
