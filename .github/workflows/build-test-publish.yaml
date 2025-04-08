@@ -78,10 +78,9 @@ jobs:
         run: |
             curl -LsSf https://astral.sh/uv/install.sh | sh
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Create virtual environment
+      - name: Install dev dependencies using uv
         run: |
-            uv venv
-            source .venv/bin/activate
+            uv pip install --system .[dev]
       - name: Configure git CLI
         run: |
           git config --global user.email "git-bot-user@python-course.com"
