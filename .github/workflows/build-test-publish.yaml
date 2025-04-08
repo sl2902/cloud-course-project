@@ -74,17 +74,14 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: 3.8
-      - name: Download wheel and sdist
-        uses: actions/download-artifact@v3
-        with:
-          name: wheel-and-sdist
-          path: ./dist/
-      - name: Install test dependencies
+      - name: Configure git CLI
         run: |
-          pip install pytest pytest-cov ./dist/*.whl
-      - name: Lint, Format, and other static code quality checks
+          git config --global user.email "git-bot-user@python-course.com"
+          git config --global user.name "sl2902"
+      - name: Run tests
         run: |
-          /bin/bash -x run.sh test:ci
+          make install
+          make test
 
   publish:
     needs:
