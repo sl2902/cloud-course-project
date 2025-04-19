@@ -14,7 +14,6 @@ try:
 except ImportError:
     ...
 import boto3
-from botocore.exceptions import ClientError
 
 DEFAULT_MAX_KEYS = 1_000
 

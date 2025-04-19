@@ -3,7 +3,6 @@
 from typing import Optional
 
 import boto3
-from botocore.exceptions import ClientError
 
 try:
     from mypy_boto3_s3 import S3Client
