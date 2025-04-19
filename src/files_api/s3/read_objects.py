@@ -75,7 +75,7 @@ def fetch_s3_objects_using_page_token(
     s3_client = s3_client or boto3.client("s3")
     params = {"Bucket": bucket_name, "ContinuationToken": continuation_token}
     if max_keys:
-        params["MaxKeys"] = max_keys
+        params["MaxKeys"] = str(max_keys)
 
     response = s3_client.list_objects_v2(**params)
     objects = response.get("Contents", [])

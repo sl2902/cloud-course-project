@@ -32,6 +32,7 @@ ROUTER = APIRouter()
 
 @ROUTER.put("/files/{file_path:path}")
 async def upload_file(request: Request, file_path: str, file: UploadFile, response: Response) -> PutFileResponse:
+    """Upload a file."""
     settings: Settings = request.app.state.settings
     object_already_exists = object_exists_in_s3(settings.s3_bucket_name, file_path)
     if object_already_exists:
@@ -40,7 +41,7 @@ async def upload_file(request: Request, file_path: str, file: UploadFile, respon
     else:
         message = f"New file uploaded at path: /{file_path}"
         response.status_code = status.HTTP_201_CREATED
-    """Upload a file."""
+
     file_content = await file.read()
     upload_s3_object(settings.s3_bucket_name, file_path, file_content=file_content, content_type=file.content_type)
 

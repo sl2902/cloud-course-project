@@ -31,5 +31,5 @@ def upload_s3_object(
     content_type = content_type or "application/octet-stream"
     try:
         s3_client.put_object(Bucket=bucket_name, Key=object_key, Body=file_content, ContentType=content_type)
-    except ClientError as e:
-        raise (e)
+    except ClientError as err:
+        raise err

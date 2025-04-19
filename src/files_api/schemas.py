@@ -1,3 +1,5 @@
+"""Pydantic class validation for REST API"""
+
 from datetime import datetime
 from typing import (
     List,
