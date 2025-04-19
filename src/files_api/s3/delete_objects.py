@@ -1,6 +1,5 @@
 """Functions for deleting objects from an S3 bucket--the "D" in CRUD."""
 
-from ctypes.util import test
 from typing import Optional
 
 try:

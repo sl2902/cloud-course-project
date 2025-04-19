@@ -29,10 +29,9 @@ def object_exists_in_s3(bucket_name: str, object_key: str, s3_client: Optional["
     s3_client = s3_client or boto3.client("s3")
     try:
         s3_client.head_object(Bucket=bucket_name, Key=object_key)
-    except ClientError as e:
+    except ClientError:
         return False
     return True
-
 
 
 def fetch_s3_object(
@@ -50,11 +49,9 @@ def fetch_s3_object(
     :return: Metadata of the object.
     """
     s3_client = s3_client or boto3.client("s3")
-    try:
-        response = s3_client.head_object(Bucket=bucket_name, Key=object_key)
-    except ClientError as e:
-        return False
-    return response.get("Metadata")
+    response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+
+    return response
 
 
 def fetch_s3_objects_using_page_token(
@@ -76,13 +73,10 @@ def fetch_s3_objects_using_page_token(
         2. Next continuation token if there are more pages, otherwise None.
     """
     s3_client = s3_client or boto3.client("s3")
-    params = {
-        "Bucket": bucket_name,
-        "ContinuationToken": continuation_token
-    }
+    params = {"Bucket": bucket_name, "ContinuationToken": continuation_token}
     if max_keys:
-        params['MaxKeys'] = max_keys
-    
+        params["MaxKeys"] = max_keys
+
     response = s3_client.list_objects_v2(**params)
     objects = response.get("Contents", [])
     next_token = response.get("NextContinuationToken")
@@ -109,14 +103,11 @@ def fetch_s3_objects_metadata(
         2. Next continuation token if there are more pages, otherwise None.
     """
     s3_client = s3_client or boto3.client("s3")
-    params = {
-        "Bucket": bucket_name,
-        "MaxKeys": max_keys
-    }
+    params = {"Bucket": bucket_name, "MaxKeys": max_keys}
 
     if prefix:
         params["Prefix"] = prefix
-    
+
     response = s3_client.list_objects_v2(**params)
     objects = response.get("Contents", [])
     next_token = response.get("NextContinuationToken")
