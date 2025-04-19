@@ -19,6 +19,30 @@ function install {
     uv pip install --editable "$THIS_DIR/[dev]"
 }
 
+function run {
+    export S3_BUCKET_NAME=some-bucket
+    AWS_PROFILE=cloud-course uvicorn files_api.main:create_app --reload
+}
+
+function run-mock {
+    set +e
+    # lsof -i :5000 | grep LISTEN | awk '{print $2}' | xargs kill -9
+    python -m moto.server -p 5000 &
+    MOTO_PID=$!
+    export AWS_ENDPOINT_URL="http://localhost:5000"
+    export AWS_SECRET_ACCESS_KEY="mock"
+    export AWS_ACCESS_KEY_ID="mock"
+    export S3_BUCKET_NAME=some-bucket
+
+    if ! aws s3 ls "s3://$S3_BUCKET_NAME" --endpoint-url "http://localhost:5000" 2>/dev/null; then
+        aws s3 mb "s3://$S3_BUCKET_NAME" --endpoint-url "http://localhost:5000"
+    fi
+
+    trap 'kill $MOTO_PID' EXIT
+    uvicorn files_api.main:create_app --reload
+    wait $MOTO_PID
+}
+
 # run linting, formatting, and other static code quality tools
 function lint {
     pre-commit run --all-files
