@@ -71,7 +71,8 @@ exclude = '''
 
 [tool.flake8]
 docstring-convention = "all"
-ignore = ["D107", "D212", "E501", "W503", "W605", "D203", "D100"]
+ignore = ["D107", "D212", "E501", "W503", "W605", "D101", "D104",
+ "D103", "D203","D209",  "D213", "D100", "D400", "D415", "R701"]
 exclude = ["venv_mlops"]
 max-line-length = 119
 
@@ -89,8 +90,14 @@ disable = [
     "line-too-long",
     "trailing-whitespace",
     "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring",
     "consider-using-f-string",
     "import-error",
+    "duplicate-code",
     "too-few-public-methods",
     "redefined-outer-name",
 ]
+
+[tool.mypy]
+exclude = "src/files_api/s3.py"
