@@ -1,6 +1,9 @@
 """Functions for reading objects from an S3 bucket--the "R" in CRUD."""
 
-from typing import Optional
+from typing import (
+    Any,
+    Optional,
+)
 
 try:
     from mypy_boto3_s3 import S3Client
@@ -73,9 +76,9 @@ def fetch_s3_objects_using_page_token(
         2. Next continuation token if there are more pages, otherwise None.
     """
     s3_client = s3_client or boto3.client("s3")
-    params = {"Bucket": bucket_name, "ContinuationToken": continuation_token}
+    params: dict[str, Any] = {"Bucket": bucket_name, "ContinuationToken": continuation_token}
     if max_keys:
-        params["MaxKeys"] = str(max_keys)
+        params["MaxKeys"] = int(max_keys)
 
     response = s3_client.list_objects_v2(**params)
     objects = response.get("Contents", [])
@@ -103,7 +106,7 @@ def fetch_s3_objects_metadata(
         2. Next continuation token if there are more pages, otherwise None.
     """
     s3_client = s3_client or boto3.client("s3")
-    params = {"Bucket": bucket_name, "MaxKeys": max_keys}
+    params: dict[str, Any] = {"Bucket": bucket_name, "MaxKeys": int(max_keys)}
 
     if prefix:
         params["Prefix"] = prefix
