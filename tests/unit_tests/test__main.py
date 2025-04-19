@@ -4,8 +4,8 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from files_api.main import create_app
+from files_api.s3.read_objects import object_exists_in_s3
 from files_api.settings import Settings
-from src.files_api.s3.read_objects import object_exists_in_s3
 from tests.consts import TEST_BUCKET_NAME
 
 
@@ -53,7 +53,7 @@ def test_list_files_with_pagination(client: TestClient):
 
 
 def test_get_file_metadata(client: TestClient):
-    client.put("/files/file_1", files={"file": (f"file_1", b"test", "text/plain")})
+    client.put("/files/file_1", files={"file": ("file_1", b"test", "text/plain")})
     assert object_exists_in_s3(TEST_BUCKET_NAME, "file_1")
     response = client.head("/files/file_1")
     assert response.status_code == 200
@@ -73,7 +73,7 @@ def test_get_file(client: TestClient):
 def test_delete_file(client: TestClient):
     client.put("/files/file_1", files={"file": ("file_1", b"test", "text/plain")})
     response = client.delete("/files/file_1")
-    response.status_code == 204
+    assert response.status_code == 204
 
     with pytest.raises(ClientError):
         client.get("/files/file_1")

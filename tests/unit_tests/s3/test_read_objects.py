@@ -12,14 +12,16 @@ from tests.consts import TEST_BUCKET_NAME
 OBJECT_KEY = "test.txt"
 
 
-def test_object_exists_in_s3(mocked_aws: None):
+def test_object_exists_in_s3(mocked_aws: None):  # pylint: disable=unused-argument
+    """Test object exists in s3"""
     s3_client = boto3.client("s3")
     s3_client.put_object(Bucket=TEST_BUCKET_NAME, Key=OBJECT_KEY, Body=b"test content")
     response = object_exists_in_s3(bucket_name=TEST_BUCKET_NAME, object_key=OBJECT_KEY)
-    assert response == True
+    assert response is True
 
 
-def test_pagination(mocked_aws: None):
+def test_pagination(mocked_aws: None):  # pylint: disable=unused-argument
+    """Test pagination"""
     s3_client = boto3.client("s3")
     for i in range(5):
         s3_client.put_object(Bucket=TEST_BUCKET_NAME, Key=f"test_{i}.txt", Body=b"Test")
@@ -37,7 +39,8 @@ def test_pagination(mocked_aws: None):
     assert next_token is None
 
 
-def test_mixed_page_sizes(mocked_aws: None):
+def test_mixed_page_sizes(mocked_aws: None):  # pylint: disable=unused-argument
+    """Test mixed oage sizes"""
     s3_client = boto3.client("s3")
     for i in range(5):
         s3_client.put_object(Bucket=TEST_BUCKET_NAME, Key=f"test_{i}.txt", Body=b"Test")
@@ -58,7 +61,8 @@ def test_mixed_page_sizes(mocked_aws: None):
     assert next_token is None
 
 
-def test_directory_queries(mocked_aws: None):
+def test_directory_queries(mocked_aws: None):  # pylint: disable=unused-argument
+    """Test directory queries"""
     s3_client = boto3.client("s3")
     s3_client.put_object(Bucket=TEST_BUCKET_NAME, Key="folder1/file_1.txt", Body=b"Test")
     s3_client.put_object(Bucket=TEST_BUCKET_NAME, Key="folder1/file_2.txt", Body=b"Test")
