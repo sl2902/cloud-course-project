@@ -29,7 +29,6 @@ def test_pagination(mocked_aws: None):  # pylint: disable=unused-argument
     # next_token = first_page.get("NextContinuationToken")
     # assert next_token is not None
     objects, next_token = fetch_s3_objects_metadata(TEST_BUCKET_NAME, max_keys=2)
-    print(objects)
     assert len(objects) == 2
     assert objects[0]["Key"] == "test_0.txt"
     assert objects[1]["Key"] == "test_1.txt"
