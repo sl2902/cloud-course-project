@@ -29,10 +29,7 @@ def object_exists_in_s3(bucket_name: str, object_key: str, s3_client: Optional["
     :return: True if the object exists, False otherwise.
     """
     s3_client = s3_client or boto3.client("s3")
-    try:
-        s3_client.head_object(Bucket=bucket_name, Key=object_key)
-    except ClientError:
-        return False
+    s3_client.head_object(Bucket=bucket_name, Key=object_key)
     return True
 
 
