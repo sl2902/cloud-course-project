@@ -74,6 +74,7 @@ function run-tests {
         --cov-report html \
         --cov-report term \
         --cov-report xml \
+        --cov-report=term-missing \
         --junit-xml "$THIS_DIR/test-reports/report.xml" \
         --cov-fail-under "$MINIMUM_TEST_COVERAGE_PERCENT" || ((PYTEST_EXIT_STATUS+=$?))
 
