@@ -1,10 +1,11 @@
-"""This module defines global errors"""
+"""Defines global errors"""
 import pydantic
-from fastapi import(
+from fastapi import (
     Request,
-    status
+    status,
 )
 from fastapi.responses import JSONResponse
+
 
 async def handle_broad_exceptions(request: Request, call_next):
     """Handle any exception that goes unhandled by a more specific exception handler."""
@@ -16,20 +17,10 @@ async def handle_broad_exceptions(request: Request, call_next):
             content={"detail": "Internal server error"},
         )
 
-async def handle_pydantic_validation_errors(
-        request: Request,
-        exc: pydantic.ValidationError
-) -> JSONResponse:
+
+async def handle_pydantic_validation_errors(_: Request, exc: pydantic.ValidationError) -> JSONResponse:
     errors = exc.errors()
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "detail": [
-                {
-                    "msg": error["msg"],
-                    "input": error["input"]
-                }
-                for error in errors
-            ]
-        }
+        content={"detail": [{"msg": error["msg"], "input": error["input"]} for error in errors]},
     )
