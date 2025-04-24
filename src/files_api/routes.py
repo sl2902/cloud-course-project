@@ -1,12 +1,14 @@
 from fastapi import (
     APIRouter,
     Depends,
+    HTTPException,
     Request,
     Response,
     UploadFile,
     status,
 )
 from fastapi.responses import StreamingResponse
+from pydantic_core import ValidationError
 
 from files_api.s3.delete_objects import delete_s3_object
 from files_api.s3.read_objects import (
@@ -18,6 +20,7 @@ from files_api.s3.read_objects import (
 from files_api.s3.write_objects import upload_s3_object
 from files_api.schemas import (
     FileMetadata,
+    FilePathValidator,
     GetFilesQueryParams,
     GetFilesResponse,
     PutFileResponse,
@@ -31,8 +34,12 @@ ROUTER = APIRouter()
 
 
 @ROUTER.put("/files/{file_path:path}")
-async def upload_file(request: Request, file_path: str, file: UploadFile, response: Response) -> PutFileResponse:
+async def upload_file(request: Request, file: UploadFile, file_path: str, response: Response) -> PutFileResponse:
     """Upload a file."""
+    try:
+        FilePathValidator(file_path=file_path)
+    except ValidationError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
     object_already_exists = object_exists_in_s3(settings.s3_bucket_name, file_path)
     if object_already_exists:
@@ -79,14 +86,19 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
 
     Note: by convention, HEAD requests MUST NOT return a body in the response.
     """
+    try:
+        FilePathValidator(file_path=file_path)
+    except ValidationError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
+    if not object_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
     get_object_response = fetch_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     response.headers["Content-Type"] = get_object_response["ContentType"]
     response.headers["Content-Length"] = str(get_object_response["ContentLength"])
     response.headers["Last-Modified"] = get_object_response["LastModified"].strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.status_code = status.HTTP_200_OK
-    # else:
-    #     response.status_code = status.HTTP_404_NOT_FOUND
     return response
 
 
@@ -96,7 +108,14 @@ async def get_file(
     file_path: str,
 ) -> StreamingResponse:
     """Retrieve a file."""
+    try:
+        FilePathValidator(file_path=file_path)
+    except ValidationError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
+    if not object_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
     get_object_response = fetch_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     headers = {
         "Content-Length": str(get_object_response["ContentLength"]),
@@ -108,15 +127,18 @@ async def get_file(
 
 
 @ROUTER.delete("/files/{file_path:path}")
-async def delete_file(
-    request: Request,
-    file_path: str,
-    response: Response,
-) -> Response:
+async def delete_file(request: Request, file_path: str, response: Response) -> Response:
     """Delete a file.
 
     NOTE: DELETE requests MUST NOT return a body in the response."""
+    try:
+        FilePathValidator(file_path=file_path)
+    except ValidationError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
+    if not object_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
     delete_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
