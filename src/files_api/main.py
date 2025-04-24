@@ -1,5 +1,10 @@
+import pydantic
 from fastapi import FastAPI
 
+from files_api.errors import (
+    handle_broad_exceptions,
+    handle_pydantic_validation_errors,
+)
 from files_api.routes import ROUTER
 from files_api.settings import Settings
 
@@ -10,6 +15,10 @@ def create_app(settings: Settings = None) -> FastAPI:
 
     app.state.settings = settings
     app.include_router(ROUTER)
+    app.add_exception_handler(
+        exc_class_or_status_code=pydantic.ValidationError, handler=handle_pydantic_validation_errors
+    )
+    app.middleware("http")(handle_broad_exceptions)
 
     return app
 
