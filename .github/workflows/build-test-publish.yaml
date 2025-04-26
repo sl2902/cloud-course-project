@@ -83,7 +83,7 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           uv venv
           source .venv/bin/activate
-          uv pip install .[dev]
+          uv pip install . .[dev]
       - name: Configure git CLI
         run: |
           git config --global user.email "git-bot-user@python-course.com"
