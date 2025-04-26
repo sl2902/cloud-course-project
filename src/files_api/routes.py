@@ -33,7 +33,7 @@ from files_api.settings import Settings
 ROUTER = APIRouter()
 
 
-@ROUTER.put("/files/{file_path:path}")
+@ROUTER.put("/v1/files/{file_path:path}")
 async def upload_file(request: Request, file: UploadFile, file_path: str, response: Response) -> PutFileResponse:
     """Upload a file."""
     try:
@@ -55,7 +55,7 @@ async def upload_file(request: Request, file: UploadFile, file_path: str, respon
     return PutFileResponse(file_path=file_path, message=message)
 
 
-@ROUTER.get("/files")
+@ROUTER.get("/v1/files")
 async def list_files(
     request: Request,
     query_params: GetFilesQueryParams = Depends(),
@@ -80,7 +80,7 @@ async def list_files(
     return GetFilesResponse(files=file_metadata, next_page_token=next_token)
 
 
-@ROUTER.head("/files/{file_path:path}")
+@ROUTER.head("/v1/files/{file_path:path}")
 async def get_file_metadata(request: Request, file_path: str, response: Response) -> Response:
     """Retrieve file metadata.
 
@@ -102,7 +102,7 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
     return response
 
 
-@ROUTER.get("/files/{file_path:path}")
+@ROUTER.get("/v1/files/{file_path:path}")
 async def get_file(
     request: Request,
     file_path: str,
@@ -126,7 +126,7 @@ async def get_file(
     )
 
 
-@ROUTER.delete("/files/{file_path:path}")
+@ROUTER.delete("/v1/files/{file_path:path}")
 async def delete_file(request: Request, file_path: str, response: Response) -> Response:
     """Delete a file.
 
