@@ -37,6 +37,16 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: 3.11.3
+      - name: Install uv manually
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install dev dependencies using uv
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          uv venv
+          source .venv/bin/activate
+          uv pip install .[dev]
       - name: Install pre-commit
         run: |
           pip install pre-commit
@@ -83,7 +93,7 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           uv venv
           source .venv/bin/activate
-          uv pip install . .[dev]
+          uv pip install .[dev]
       - name: Configure git CLI
         run: |
           git config --global user.email "git-bot-user@python-course.com"
