@@ -28,6 +28,7 @@ repos:
         args: [--markdown-linebreak-ext=md]
       # Makes sure files end in a newline and only a newline;
       - id: end-of-file-fixer
+        exclude: ^openapi\.json$
       # Attempts to load all TOML files to verify syntax.
       - id: check-toml
       # Attempts to load all yaml files to verify syntax; unsafe: only check syntax, do not load yaml
