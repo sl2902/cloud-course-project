@@ -33,15 +33,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+    steps:
+      - uses: actions/checkout@v3
       - name: Set up Python 3.11
         uses: actions/setup-python@v3
         with:
           python-version: 3.11.3
+      - name: Install uv manually
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install dev dependencies using uv
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          uv venv
+          source .venv/bin/activate
+          uv pip install .[dev]
       - name: Install pre-commit
         run: |
+          source .venv/bin/activate
           pip install pre-commit
       - name: Lint, Format, and other static code quality checks
         run: |
+          source .venv/bin/activate
           /bin/bash -x run.sh lint:ci
 
   # build-wheel-and-sdist:
@@ -83,7 +100,7 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           uv venv
           source .venv/bin/activate
-          uv pip install . .[dev]
+          uv pip install .[dev]
       - name: Configure git CLI
         run: |
           git config --global user.email "git-bot-user@python-course.com"
