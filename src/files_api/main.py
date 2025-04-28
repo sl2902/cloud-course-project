@@ -1,4 +1,5 @@
 from textwrap import dedent
+
 import pydantic
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -13,7 +14,8 @@ from files_api.settings import Settings
 
 def create_app(settings: Settings = None) -> FastAPI:
     settings = settings = settings or Settings()
-    app = FastAPI(title="Files API",
+    app = FastAPI(
+        title="Files API",
         summary="Store and retrieve files.",
         version="v1",  # a fancier version would read the semver from pkg metadata
         description=dedent(
@@ -31,7 +33,8 @@ def create_app(settings: Settings = None) -> FastAPI:
         """
         ),
         docs_url="/",  # its easier to find the docs when they live on the base url
-        generate_unique_id_function=custom_generate_unique_id,)
+        generate_unique_id_function=custom_generate_unique_id,
+    )
 
     app.state.settings = settings
     app.include_router(ROUTER)
@@ -41,6 +44,7 @@ def create_app(settings: Settings = None) -> FastAPI:
     app.middleware("http")(handle_broad_exceptions)
 
     return app
+
 
 def custom_generate_unique_id(route: APIRoute):
     """

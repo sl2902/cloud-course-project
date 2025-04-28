@@ -9,8 +9,8 @@ from typing import (
 
 from pydantic import (
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
     field_validator,
     model_validator,
 )
@@ -35,11 +35,11 @@ INVALID_FILE_PATH = re.compile(
 
 class FilePathValidator(BaseModel):
     """File path validator"""
+
     file_path: str = Field(
         ...,
         # pattern=r'^(?![\/.])(?!.*//)(?!.*%)\S+$',
-        description=("Relative path (no leading slash or dot), "
-                     "no empty segments, no percent-encoding, no spaces"),
+        description=("Relative path (no leading slash or dot), " "no empty segments, no percent-encoding, no spaces"),
     )
 
     @field_validator("file_path")
@@ -110,8 +110,8 @@ class GetFilesQueryParams(BaseModel):
     """Query parameters for `GET /v1/files`."""
 
     page_size: int = Field(
-        DEFAULT_GET_FILES_PAGE_SIZE, 
-        le=DEFAULT_GET_FILES_MAX_PAGE_SIZE, 
+        DEFAULT_GET_FILES_PAGE_SIZE,
+        le=DEFAULT_GET_FILES_MAX_PAGE_SIZE,
         ge=DEFAULT_GET_FILES_MIN_PAGE_SIZE,
     )
     directory: Optional[str] = Field(

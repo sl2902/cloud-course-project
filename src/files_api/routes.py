@@ -40,7 +40,9 @@ ROUTER = APIRouter(tags=["Files"])
         status.HTTP_201_CREATED: {"model": PutFileResponse},
     },
 )
-async def upload_file(request: Request, file_content: UploadFile, file_path: str, response: Response) -> PutFileResponse:
+async def upload_file(
+    request: Request, file_content: UploadFile, file_path: str, response: Response
+) -> PutFileResponse:
     """Upload a file."""
     try:
         FilePathValidator(file_path=file_path)
@@ -56,7 +58,9 @@ async def upload_file(request: Request, file_content: UploadFile, file_path: str
         response.status_code = status.HTTP_201_CREATED
 
     file_bytes = await file_content.read()
-    upload_s3_object(settings.s3_bucket_name, file_path, file_content=file_bytes, content_type=file_content.content_type)
+    upload_s3_object(
+        settings.s3_bucket_name, file_path, file_content=file_bytes, content_type=file_content.content_type
+    )
 
     return PutFileResponse(file_path=file_path, message=message)
 
@@ -86,8 +90,9 @@ async def list_files(
     return GetFilesResponse(files=file_metadata, next_page_token=next_token)
 
 
-@ROUTER.head("/v1/files/{file_path:path}",
-             responses={
+@ROUTER.head(
+    "/v1/files/{file_path:path}",
+    responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "File not found for the given `file_path`.",
         },
@@ -133,8 +138,9 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
     return response
 
 
-@ROUTER.get("/v1/files/{file_path:path}",
-            responses={
+@ROUTER.get(
+    "/v1/files/{file_path:path}",
+    responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "File not found for the given `file_path`.",
         },
