@@ -78,7 +78,7 @@ configuration = files_api_sdk.Configuration(
 with files_api_sdk.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = files_api_sdk.FilesApi(api_client)
-    file_path = 'file_path_example' # str | 
+    file_path = 'file_path_example' # str |
 
     try:
         # Delete File
@@ -120,7 +120,3 @@ Endpoints do not require authorization.
 
 
 ## Author
-
-
-
-

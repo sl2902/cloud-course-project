@@ -5,8 +5,8 @@ Response model for `GET /v1/files`.
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**files** | [**List[FileMetadata]**](FileMetadata.md) |  | 
-**next_page_token** | **str** |  | 
+**files** | [**List[FileMetadata]**](FileMetadata.md) |  |
+**next_page_token** | **str** |  |
 
 ## Example
 
@@ -26,5 +26,3 @@ get_files_response_dict = get_files_response_instance.to_dict()
 get_files_response_from_dict = GetFilesResponse.from_dict(get_files_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-
