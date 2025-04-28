@@ -72,8 +72,8 @@ exclude = '''
 [tool.flake8]
 docstring-convention = "all"
 ignore = ["D107", "D212", "E501", "W503", "W605", "D101", "D102", "D104",
- "D103", "D203","D209",  "D213", "D100", "D400", "D415", "R701"]
-exclude = ["venv_mlops"]
+ "D103", "D202", "D203", "D208", "D209",  "D213", "D100", "D400", "D401", "D415", "R701"]
+exclude = ["venv_mlops", "files-api-sdk"]
 max-line-length = 119
 
 # radon
@@ -84,6 +84,9 @@ profile = "black"
 multi_line_output = "VERTICAL_HANGING_INDENT"
 force_grid_wrap = 2
 line_length = 119
+
+[tool.pylint.master]
+ignore = ["files_api_sdk"]
 
 [tool.pylint."messages control"]
 disable = [
@@ -103,3 +106,7 @@ disable = [
 
 [tool.mypy]
 exclude = "src/files_api/s3.py"
+
+[[tool.mypy.overrides]]
+module = "files_api_sdk.*"
+ignore_errors = true
