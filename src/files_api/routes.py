@@ -30,11 +30,17 @@ from files_api.settings import Settings
 # from pkg_resources import FileMetadata
 
 
-ROUTER = APIRouter()
+ROUTER = APIRouter(tags=["Files"])
 
 
-@ROUTER.put("/v1/files/{file_path:path}")
-async def upload_file(request: Request, file: UploadFile, file_path: str, response: Response) -> PutFileResponse:
+@ROUTER.put(
+    "/v1/files/{file_path:path}",
+    responses={
+        status.HTTP_200_OK: {"model": PutFileResponse},
+        status.HTTP_201_CREATED: {"model": PutFileResponse},
+    },
+)
+async def upload_file(request: Request, file_content: UploadFile, file_path: str, response: Response) -> PutFileResponse:
     """Upload a file."""
     try:
         FilePathValidator(file_path=file_path)
@@ -49,8 +55,8 @@ async def upload_file(request: Request, file: UploadFile, file_path: str, respon
         message = f"New file uploaded at path: /{file_path}"
         response.status_code = status.HTTP_201_CREATED
 
-    file_content = await file.read()
-    upload_s3_object(settings.s3_bucket_name, file_path, file_content=file_content, content_type=file.content_type)
+    file_bytes = await file_content.read()
+    upload_s3_object(settings.s3_bucket_name, file_path, file_content=file_bytes, content_type=file_content.content_type)
 
     return PutFileResponse(file_path=file_path, message=message)
 
@@ -80,7 +86,32 @@ async def list_files(
     return GetFilesResponse(files=file_metadata, next_page_token=next_token)
 
 
-@ROUTER.head("/v1/files/{file_path:path}")
+@ROUTER.head("/v1/files/{file_path:path}",
+             responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "File not found for the given `file_path`.",
+        },
+        status.HTTP_200_OK: {
+            "headers": {
+                "Content-Type": {
+                    "description": "The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) of the file.",
+                    "example": "text/plain",
+                    "schema": {"type": "string"},
+                },
+                "Content-Length": {
+                    "description": "The size of the file in bytes.",
+                    "example": 512,
+                    "schema": {"type": "integer"},
+                },
+                "Last-Modified": {
+                    "description": "The last modified date of the file.",
+                    "example": "Thu, 01 Jan 2022 00:00:00 GMT",
+                    "schema": {"type": "string", "format": "date-time"},
+                },
+            }
+        },
+    },
+)
 async def get_file_metadata(request: Request, file_path: str, response: Response) -> Response:
     """Retrieve file metadata.
 
@@ -102,7 +133,21 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
     return response
 
 
-@ROUTER.get("/v1/files/{file_path:path}")
+@ROUTER.get("/v1/files/{file_path:path}",
+            responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "File not found for the given `file_path`.",
+        },
+        status.HTTP_200_OK: {
+            "description": "The file content.",
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"},
+                },
+            },
+        },
+    },
+)
 async def get_file(
     request: Request,
     file_path: str,
@@ -126,7 +171,17 @@ async def get_file(
     )
 
 
-@ROUTER.delete("/v1/files/{file_path:path}")
+@ROUTER.delete(
+    "/v1/files/{file_path:path}",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "File not found for the given `file_path`.",
+        },
+        status.HTTP_204_NO_CONTENT: {
+            "description": "File deleted successfully.",
+        },
+    },
+)
 async def delete_file(request: Request, file_path: str, response: Response) -> Response:
     """Delete a file.
 

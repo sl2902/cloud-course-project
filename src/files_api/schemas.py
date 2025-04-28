@@ -10,6 +10,7 @@ from typing import (
 from pydantic import (
     BaseModel,
     Field,
+    ConfigDict,
     field_validator,
     model_validator,
 )
@@ -33,10 +34,12 @@ INVALID_FILE_PATH = re.compile(
 
 
 class FilePathValidator(BaseModel):
+    """File path validator"""
     file_path: str = Field(
         ...,
         # pattern=r'^(?![\/.])(?!.*//)(?!.*%)\S+$',
-        description=("Relative path (no leading slash or dot), " "no empty segments, no percent-encoding, no spaces"),
+        description=("Relative path (no leading slash or dot), "
+                     "no empty segments, no percent-encoding, no spaces"),
     )
 
     @field_validator("file_path")
@@ -49,9 +52,14 @@ class FilePathValidator(BaseModel):
 
 # read (cRud)
 class FileMetadata(BaseModel):
-    file_path: str
-    last_modified: datetime
-    size_bytes: int
+    """Metadata of a file."""
+
+    file_path: str = Field(
+        description="The path of the file.",
+        json_schema_extra={"example": "path/to/pyproject.toml"},
+    )
+    last_modified: datetime = Field(description="The last modified date of the file.")
+    size_bytes: int = Field(description="The size of the file in bytes.")
 
     @field_validator("file_path")
     @classmethod
@@ -62,21 +70,58 @@ class FileMetadata(BaseModel):
 
 
 class PutFileResponse(BaseModel):
-    file_path: str
-    message: str
+    """Response model for `PUT /v1/files/:file_path`."""
+
+    file_path: str = Field(
+        description="The path of the file.",
+        json_schema_extra={"example": "path/to/pyproject.toml"},
+    )
+    message: str = Field(description="A message about the operation.")
 
 
 class GetFilesResponse(BaseModel):
+    """Response model for `GET /v1/files`."""
+
     files: List[FileMetadata]
     next_page_token: Optional[str]
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "files": [
+                    {
+                        "file_path": "path/to/pyproject.toml",
+                        "last_modified": "2022-01-01T00:00:00Z",
+                        "size_bytes": 512,
+                    },
+                    {
+                        "file_path": "path/to/Makefile",
+                        "last_modified": "2022-01-01T00:00:00Z",
+                        "size_bytes": 256,
+                    },
+                ],
+                "next_page_token": "next_page_token_example",
+            }
+        }
+    )
+
 
 class GetFilesQueryParams(BaseModel):
+    """Query parameters for `GET /v1/files`."""
+
     page_size: int = Field(
-        DEFAULT_GET_FILES_PAGE_SIZE, le=DEFAULT_GET_FILES_MAX_PAGE_SIZE, ge=DEFAULT_GET_FILES_MIN_PAGE_SIZE
+        DEFAULT_GET_FILES_PAGE_SIZE, 
+        le=DEFAULT_GET_FILES_MAX_PAGE_SIZE, 
+        ge=DEFAULT_GET_FILES_MIN_PAGE_SIZE,
     )
-    directory: Optional[str] = DEFAULT_GET_FILES_DIRECTORY
-    page_token: Optional[str] = None
+    directory: Optional[str] = Field(
+        DEFAULT_GET_FILES_DIRECTORY,
+        description="The directory to list files from.",
+    )
+    page_token: Optional[str] = Field(
+        None,
+        description="The token for the next page.",
+    )
 
     @model_validator(mode="after")
     def check_mutual_exclusivity(self) -> Self:
@@ -90,4 +135,6 @@ class GetFilesQueryParams(BaseModel):
 
 
 class DeleteFileResponse(BaseModel):
+    """Response model for `DELETE /v1/files/:file_path`."""
+
     message: str
