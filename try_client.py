@@ -1,15 +1,11 @@
+from pprint import pprint
 
-import time
 import files_api_sdk
 from files_api_sdk.rest import ApiException
-from pprint import pprint
 
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = files_api_sdk.Configuration(
-    host = "http://localhost:8000"
-)
-
+configuration = files_api_sdk.Configuration(host="http://localhost:8000")
 
 
 # Enter a context with an instance of the API client
@@ -21,15 +17,15 @@ with files_api_sdk.ApiClient(configuration) as api_client:
 
     try:
         # Upload File
-        api_response = api_instance.upload_file_v1_files_file_path_put(
+        api_response = api_instance.files_upload_file(
             file_path=file_path,
-            file=file_content,
+            file_content=file_content,
         )
         print("The response of DefaultApi->upload_file_v1_files_file_path_put:\n")
         pprint(api_response)
     except ApiException as err:
         print("Exception when calling DefaultApi->upload_file_v1_files_file_path_put: %s\n" % err)
-    # file_path = 'delete_folder' # str | 
+    # file_path = 'delete_folder' # str |
 
     # try:
     #     # Delete File
