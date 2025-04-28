@@ -1,11 +1,12 @@
 # PutFileResponse
 
+Response model for `PUT /v1/files/:file_path`.
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**file_path** | **str** |  | 
-**message** | **str** |  | 
+**file_path** | **str** | The path of the file. | 
+**message** | **str** | A message about the operation. | 
 
 ## Example
 

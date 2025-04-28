@@ -1,5 +1,6 @@
 # GetFilesResponse
 
+Response model for `GET /v1/files`.
 
 ## Properties
 Name | Type | Description | Notes

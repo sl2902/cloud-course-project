@@ -1,12 +1,13 @@
 # FileMetadata
 
+Metadata of a file.
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**file_path** | **str** |  | 
-**last_modified** | **datetime** |  | 
-**size_bytes** | **int** |  | 
+**file_path** | **str** | The path of the file. | 
+**last_modified** | **datetime** | The last modified date of the file. | 
+**size_bytes** | **int** | The size of the file in bytes. | 
 
 ## Example
 
