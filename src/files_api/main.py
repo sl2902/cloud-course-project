@@ -33,6 +33,7 @@ def create_app(settings: Settings = None) -> FastAPI:
         """
         ),
         docs_url="/",  # its easier to find the docs when they live on the base url
+        root_path="/prod",
         generate_unique_id_function=custom_generate_unique_id,
     )
 
