@@ -9,7 +9,12 @@ authors = [{ name = "<your name>", email = "some-email@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.7"
 license = { text = "MIT" }
-dependencies = ["boto3", "fastapi", "python-multipart", "pydantic-settings"]
+dependencies = [
+"boto3", 
+"fastapi", 
+"python-multipart", "pydantic-settings",
+"loguru",
+]
 classifiers = ["Programming Language :: Python :: 3"]
 keywords = ["one", "two"]
 
@@ -24,7 +29,7 @@ version = { file = "version.txt" }
 [project.optional-dependencies]
 aws-lambda = ["mangum"]
 api = ["uvicorn", "moto[server]", "httpx"]
-test = ["pytest", "pytest-cov", "moto[s3]"]
+test = ["pytest", "pytest-cov", "moto[s3]", "locust"]
 release = ["build", "twine"]
 static-code-qa = [
     "pre-commit",
