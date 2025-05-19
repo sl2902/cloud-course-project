@@ -13,6 +13,12 @@ deploy-lambda: clean
 deploy-lambda-code: clean
 	bash run.sh deploy-lambda:code
 
+run-docker:
+	bash run.sh run-docker
+
+run-locust:
+	bash run.sh run-locust
+
 install-generated-sdk:
 	bash run.sh install-generated-sdk
 

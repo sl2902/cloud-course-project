@@ -51,7 +51,7 @@ function deploy-lambda:cd {
     docker pull public.ecr.aws/lambda/python:3.12-arm64
 
     # install dependencies in a docker container to ensure compatibility with AWS Lambda
-    # 
+    #
     # Note: we remove boto3 and botocore because AWS lambda automatically
     # provides these. This saves us ~24MB in the final, uncompressed layer size.
     docker run --rm \
@@ -98,6 +98,32 @@ function deploy-lambda:cd {
         --output json | cat
 }
 
+function set-local-aws-env-vars {
+    export AWS_PROFILE=mlops-club-sso
+    export AWS_REGION=us-west-2
+}
+
+function run-docker {
+    set-local-aws-env-vars
+    aws configure export-credentials --profile $AWS_PROFILE --format env > .env
+    # aws configure get aws_access_key_id --profile $AWS_PROFILE     | awk '{print "AWS_ACCESS_KEY_ID=" $0}' > .env
+    # aws configure get aws_secret_access_key --profile $AWS_PROFILE | awk '{print "AWS_SECRET_ACCESS_KEY=" $0}' >> .env
+    # aws configure get region --profile $AWS_PROFILE                | awk '{print "AWS_REGION=" $0}' >> .env
+
+    docker compose up --build -d
+}
+
+function run-locust {
+    set-local-aws-env-vars
+    aws configure export-credentials --profile $AWS_PROFILE --format env > .env
+    docker compose \
+        --file docker-compose.yaml \
+        --file docker-compose.locust.yaml \
+        up \
+        --build \
+        -d
+}
+
 function install-generated-sdk {
     # setting editable_mode=strict fixes an issue with autocompletion
     # in VS Code when installing editable packages. See:
@@ -117,6 +143,7 @@ function generate-client-library {
 
 function run {
     export S3_BUCKET_NAME=some-bucket
+    export LOGURU_LEVEL="INFO"
     AWS_PROFILE=cloud-course uvicorn files_api.main:create_app --reload
 }
 
