@@ -8,8 +8,10 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
+from loguru import logger
 from pydantic_core import ValidationError
 
+from files_api.route_handler import RouteHandler
 from files_api.s3.delete_objects import delete_s3_object
 from files_api.s3.read_objects import (
     fetch_s3_object,
@@ -32,6 +34,8 @@ from files_api.settings import Settings
 
 ROUTER = APIRouter(tags=["Files"])
 
+ROUTER.route_class = RouteHandler
+
 
 @ROUTER.put(
     "/v1/files/{file_path:path}",
@@ -50,6 +54,7 @@ async def upload_file(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
     object_already_exists = object_exists_in_s3(settings.s3_bucket_name, file_path)
+    logger.debug("object_already_exists: {exists}", exists=object_already_exists)
     if object_already_exists:
         message = f"Existing file updated at path: /{file_path}"
         response.status_code = status.HTTP_200_OK
@@ -58,9 +63,12 @@ async def upload_file(
         response.status_code = status.HTTP_201_CREATED
 
     file_bytes = await file_content.read()
+    logger.debug("trying to upload file to s3: {file_path}", file_path=file_path)
     upload_s3_object(
         settings.s3_bucket_name, file_path, file_content=file_bytes, content_type=file_content.content_type
     )
+
+    logger.info(message)
 
     return PutFileResponse(file_path=file_path, message=message)
 
@@ -72,6 +80,10 @@ async def list_files(
 ) -> GetFilesResponse:
     """List files with pagination."""
     settings: Settings = request.app.state.settings
+    logger.debug("fetching files from s3: {dir}", dir=query_params.directory)
+    logger.info(query_params.model_dump())
+    raise Exception('test')
+
     if query_params.page_token:
         objects, next_token = fetch_s3_objects_using_page_token(
             bucket_name=settings.s3_bucket_name,
@@ -127,14 +139,22 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
     except ValidationError as err:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    logger.debug("Checking if object exists in bucket='{bucket}' with key='{key}'", 
+                 bucket=settings.s3_bucket_name, key=file_path)
+    
     object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
     if not object_exists:
+        logger.info("File not found: key='{key}' in bucket='{bucket}'", 
+                    key=file_path, bucket=settings.s3_bucket_name)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
     get_object_response = fetch_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     response.headers["Content-Type"] = get_object_response["ContentType"]
     response.headers["Content-Length"] = str(get_object_response["ContentLength"])
     response.headers["Last-Modified"] = get_object_response["LastModified"].strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.status_code = status.HTTP_200_OK
+
+    logger.info("File metadata retrieval succeeded for key='{key}'", key=file_path)
+
     return response
 
 
@@ -159,19 +179,34 @@ async def get_file(
     file_path: str,
 ) -> StreamingResponse:
     """Retrieve a file."""
+    logger.info("GET request received for file_path='{file_path}'", file_path=file_path)
+
     try:
         FilePathValidator(file_path=file_path)
     except ValidationError as err:
+        logger.warning("Validation failed for key='{key}': {error}", 
+                       key=file_path, 
+                       error=err
+                    )
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    logger.debug("Checking if object exists in bucket='{bucket}' with key='{key}'", 
+                 bucket=settings.s3_bucket_name, key=file_path)
+    
     object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
     if not object_exists:
+        logger.info("File not found: key='{key}' in bucket='{bucket}'", 
+                    key=file_path, bucket=settings.s3_bucket_name)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+    
+    logger.debug("Fetching object key='{key}' from bucket='{bucket}'", 
+                 key=file_path, bucket=settings.s3_bucket_name)
     get_object_response = fetch_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     headers = {
         "Content-Length": str(get_object_response["ContentLength"]),
         "Content-Type": get_object_response["ContentType"],
     }
+    logger.info("File retrieval succeeded for key='{key}'", key=file_path)
     return StreamingResponse(
         content=get_object_response["Body"], media_type=get_object_response["ContentType"], headers=headers
     )
@@ -192,14 +227,28 @@ async def delete_file(request: Request, file_path: str, response: Response) -> R
     """Delete a file.
 
     NOTE: DELETE requests MUST NOT return a body in the response."""
+    logger.info("DELETE /v1/files/{key} - Request received.", key=file_path)
     try:
         FilePathValidator(file_path=file_path)
     except ValidationError as err:
+        logger.warning("Validation failed for key='{file_path}': {err}", 
+                       file_path=file_path,
+                       err=err
+                    )
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err))
     settings: Settings = request.app.state.settings
+    logger.debug("Checking object existence in bucket='{bucket}' with key='{key}'", 
+                 bucket=settings.s3_bucket_name, key=file_path)
+    
     object_exists = object_exists_in_s3(bucket_name=settings.s3_bucket_name, object_key=file_path)
     if not object_exists:
+        logger.info("File not found: key='{key}' in bucket='{bucket}'", 
+                    key=file_path, bucket=settings.s3_bucket_name)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+    
+    logger.debug("Deleting object key='{key}' from bucket='{bucket}'", 
+                 key=file_path, bucket=settings.s3_bucket_name)
     delete_s3_object(bucket_name=settings.s3_bucket_name, object_key=file_path)
     response.status_code = status.HTTP_204_NO_CONTENT
+    logger.info("File deleted successfully: key='{key}'", key=file_path)
     return response

@@ -2,13 +2,20 @@ from textwrap import dedent
 
 import pydantic
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
 from files_api.errors import (
     handle_broad_exceptions,
     handle_pydantic_validation_errors,
 )
-from files_api.routes import ROUTER
+from files_api.monitoring.logger import inject_lambda_context__middleware
+# from files_api.monitoring.logger import log_process_request_and_response_info
+from files_api.route_handler import RouteHandler
+from files_api.routes import (
+    ROUTER,
+    # GENERATED_FILES_ROUTER,
+)
 from files_api.settings import Settings
 
 
@@ -38,11 +45,22 @@ def create_app(settings: Settings = None) -> FastAPI:
     )
 
     app.state.settings = settings
+
+    app.router.route_class = RouteHandler
     app.include_router(ROUTER)
+    # app.include_router(GENERATED_FILES_ROUTER)
+    
     app.add_exception_handler(
-        exc_class_or_status_code=pydantic.ValidationError, handler=handle_pydantic_validation_errors
+        exc_class_or_status_code=RequestValidationError,
+        handler=handle_pydantic_validation_errors,
+    )
+    app.add_exception_handler(
+        exc_class_or_status_code=pydantic.ValidationError,
+        handler=handle_pydantic_validation_errors,
     )
     app.middleware("http")(handle_broad_exceptions)
+    # app.middleware("http")(log_process_request_and_response_info)
+    app.middleware("http")(inject_lambda_context__middleware)
 
     return app
 
