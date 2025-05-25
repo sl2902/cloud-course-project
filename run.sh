@@ -161,6 +161,18 @@ function run-mock {
         aws s3 mb "s3://$S3_BUCKET_NAME" --endpoint-url "http://localhost:5000"
     fi
 
+    #######################################
+    # --- Mock OpenAI with mockserver --- #
+    #######################################
+
+    export OPENAI_MOCK_PORT=5002
+    python tests/mocks/openai_fastapi_mock_app.py &
+    OPENAI_MOCK_PID=$!
+
+    # point the OpenAI SDK to the mocked OpenAI server using mocked credentials
+	export OPENAI_BASE_URL="http://localhost:${OPENAI_MOCK_PORT}"
+	export OPENAI_API_KEY="mocked_key"
+
     trap 'kill $MOTO_PID' EXIT
     uvicorn files_api.main:create_app --reload
     wait $MOTO_PID
