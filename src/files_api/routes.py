@@ -1,3 +1,6 @@
+from typing import Annotated
+import mimetypes
+import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,6 +11,11 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
+from files_api import settings
+from files_api.generate_files import  (
+    get_text_chat_completion,
+    generate_image,
+)
 from loguru import logger
 from pydantic_core import ValidationError
 
@@ -23,21 +31,26 @@ from files_api.s3.write_objects import upload_s3_object
 from files_api.schemas import (
     FileMetadata,
     FilePathValidator,
+    GeneratedFileType,
+    GeneratedFilesQueryParams,
+    GeneratedImagesQueryParams,
     GetFilesQueryParams,
     GetFilesResponse,
     PutFileResponse,
+    PutGeneratedFileResponse,
 )
 from files_api.settings import Settings
 
 # from pkg_resources import FileMetadata
 
 
-ROUTER = APIRouter(tags=["Files"])
+FILES_ROUTER = APIRouter(tags=["Files"])
+GENERATED_FILES_ROUTER = APIRouter(tags=["GeneratedFiles"])
 
-ROUTER.route_class = RouteHandler
+FILES_ROUTER.route_class = RouteHandler
 
 
-@ROUTER.put(
+@FILES_ROUTER.put(
     "/v1/files/{file_path:path}",
     responses={
         status.HTTP_200_OK: {"model": PutFileResponse},
@@ -73,7 +86,7 @@ async def upload_file(
     return PutFileResponse(file_path=file_path, message=message)
 
 
-@ROUTER.get("/v1/files")
+@FILES_ROUTER.get("/v1/files")
 async def list_files(
     request: Request,
     query_params: GetFilesQueryParams = Depends(),
@@ -82,7 +95,7 @@ async def list_files(
     settings: Settings = request.app.state.settings
     logger.debug("fetching files from s3: {dir}", dir=query_params.directory)
     logger.info(query_params.model_dump())
-    raise Exception('test')
+    # raise Exception('test')
 
     if query_params.page_token:
         objects, next_token = fetch_s3_objects_using_page_token(
@@ -102,7 +115,7 @@ async def list_files(
     return GetFilesResponse(files=file_metadata, next_page_token=next_token)
 
 
-@ROUTER.head(
+@FILES_ROUTER.head(
     "/v1/files/{file_path:path}",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -158,7 +171,7 @@ async def get_file_metadata(request: Request, file_path: str, response: Response
     return response
 
 
-@ROUTER.get(
+@FILES_ROUTER.get(
     "/v1/files/{file_path:path}",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -212,7 +225,7 @@ async def get_file(
     )
 
 
-@ROUTER.delete(
+@FILES_ROUTER.delete(
     "/v1/files/{file_path:path}",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -252,3 +265,117 @@ async def delete_file(request: Request, file_path: str, response: Response) -> R
     response.status_code = status.HTTP_204_NO_CONTENT
     logger.info("File deleted successfully: key='{key}'", key=file_path)
     return response
+
+@GENERATED_FILES_ROUTER.post(
+    "/v1/files/generated/chat/completion/{file_path:path}",
+    status_code=status.HTTP_201_CREATED,
+    summary="AI Chat Completion",
+    responses={
+        status.HTTP_201_CREATED: {
+            "model": PutGeneratedFileResponse,
+            "description": "Successful Response",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "text": PutGeneratedFileResponse.model_json_schema()["examples"][0],
+                    },
+                },
+            },
+        },
+    },
+)
+async def generate_chat_completion(
+    request: Request,
+    response: Response,
+    query_params: Annotated[GeneratedFilesQueryParams, Depends()], 
+) -> PutGeneratedFileResponse:
+    """
+    Generate a File using AI.
+
+    Supported file types:
+    - **text**: `.txt`
+
+    Note: the generated file type is derived from the file_path extension. So the file_path must have
+    an extension matching one of the supported file types in the list above.
+    """
+    settings: Settings = request.app.state.settings
+    s3_bucket_name = settings.s3_bucket_name
+
+    file_content = await get_text_chat_completion(prompt=query_params.prompt)
+    file_content_bytes: bytes = file_content.encode('utf-8')
+    content_type = "text/plain"
+
+    content_type: str |None = content_type or mimetypes.guess_type(query_params.file_path)[0] # type: ignore
+
+    upload_s3_object(
+        bucket_name=s3_bucket_name,
+        object_key=query_params.file_path,
+        file_content=file_content_bytes,
+        content_type=content_type,
+    )
+
+    response.status_code = status.HTTP_201_CREATED
+    return PutGeneratedFileResponse(
+        file_path=query_params.file_path,
+        # message=f"New {query_params.file_type.value} file generated and uploaded at path: {query_params.file_path}",
+        message=f"New {GeneratedFileType.TEXT.value} file generated and uploaded at path: {query_params.file_path}",
+    )
+
+
+@GENERATED_FILES_ROUTER.post(
+    "/v1/files/generated/image/generation/{file_path:path}",
+    status_code=status.HTTP_201_CREATED,
+    summary="AI Image Generation",
+    responses={
+        status.HTTP_201_CREATED: {
+            "model": PutGeneratedFileResponse,
+            "description": "Successful Response",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "text": PutGeneratedFileResponse.model_json_schema()["examples"][1],
+                    },
+                },
+            },
+        },
+    },
+)
+async def generate_image_completion(
+    request: Request,
+    response: Response,
+    query_params: Annotated[GeneratedImagesQueryParams, Depends()], 
+) -> PutGeneratedFileResponse:
+    """
+    Generate an Image using AI.
+
+    Supported file types:
+    - **text**: `png|jpg|jpeg`
+
+    Note: the generated file type is derived from the file_path extension. So the file_path must have
+    an extension matching one of the supported file types in the list above.
+    """
+    settings: Settings = request.app.state.settings
+    s3_bucket_name = settings.s3_bucket_name
+    content_type = None
+
+    image_url = await generate_image(prompt=query_params.prompt)
+    async with httpx.AsyncClient() as client:
+        image_response = await client.get(image_url)  # pylint: disable=missing-timeout
+    file_content_bytes = image_response.content
+
+    content_type: str |None = content_type or mimetypes.guess_type(query_params.file_path)[0] # type: ignore
+
+    upload_s3_object(
+        bucket_name=s3_bucket_name,
+        object_key=query_params.file_path,
+        file_content=file_content_bytes,
+        content_type=content_type,
+    )
+
+    response.status_code = status.HTTP_201_CREATED
+    return PutGeneratedFileResponse(
+        file_path=query_params.file_path,
+        # message=f"New {query_params.file_type.value} file generated and uploaded at path: {query_params.file_path}",
+        message=f"New {GeneratedFileType.IMAGE.value} file generated and uploaded at path: {query_params.file_path}",
+    )
+
