@@ -1,9 +1,12 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 
+from files_api.schemas import GeneratedFileType
+
 from files_api.s3.read_objects import object_exists_in_s3
 from tests.consts import TEST_BUCKET_NAME
 
+TEST_FILE_PATH = "test.txt"
 
 def test_upload_file(client: TestClient):
     prefix = "some_folder/test.txt"
@@ -64,3 +67,48 @@ def test_delete_file(client: TestClient):
 
     response = client.get("/v1/files/file_1")
     assert response.status_code == 404
+
+def test_generate_chat_text(client: TestClient):
+    """Test generating text using POST method."""
+    # response = client.post(
+    #     url=f"/v1/files/generated/chat/completion/{TEST_FILE_PATH}",
+    #     params={"prompt": "Test Prompt", "file_type": GeneratedFileType.TEXT.value},
+    # )
+
+    response = client.post(
+        url=f"/v1/files/generated/chat/completion/{TEST_FILE_PATH}",
+        params={"prompt": "Test Prompt"},
+    )
+
+    respone_data = response.json()
+    assert response.status_code == status.HTTP_201_CREATED
+    assert (
+        respone_data["message"]
+        == f"New {GeneratedFileType.TEXT.value} file generated and uploaded at path: {TEST_FILE_PATH}"
+    )
+
+    # Get the generated file
+    response = client.get(f"/v1/files/{TEST_FILE_PATH}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.content == b"This is a mock response from the chat completion endpoint."
+    assert "text/plain" in response.headers["Content-Type"]
+
+def test_imag_generation(client: TestClient):
+    """Test generating image using POST method."""
+    IMAGE_FILE_PATH = "some/nested/path/image.png"  # pylint: disable=invalid-name
+    response = client.post(
+        url=f"/v1/files/generated/image/generation/{IMAGE_FILE_PATH}",
+        params={"prompt": "Test Prompt"},
+    )
+
+    response_data = response.json()
+    assert response.status_code == status.HTTP_201_CREATED
+    assert (
+        response_data["message"]
+        == f"New {GeneratedFileType.IMAGE.value} file generated and uploaded at path: {IMAGE_FILE_PATH}"
+    )
+
+    response = client.get(f"/v1/files/{IMAGE_FILE_PATH}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.content is not None
+    assert response.headers["Content-Type"] == "image/png"
