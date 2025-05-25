@@ -13,8 +13,8 @@ from files_api.monitoring.logger import inject_lambda_context__middleware
 # from files_api.monitoring.logger import log_process_request_and_response_info
 from files_api.route_handler import RouteHandler
 from files_api.routes import (
-    ROUTER,
-    # GENERATED_FILES_ROUTER,
+    FILES_ROUTER,
+    GENERATED_FILES_ROUTER,
 )
 from files_api.settings import Settings
 
@@ -47,8 +47,8 @@ def create_app(settings: Settings = None) -> FastAPI:
     app.state.settings = settings
 
     app.router.route_class = RouteHandler
-    app.include_router(ROUTER)
-    # app.include_router(GENERATED_FILES_ROUTER)
+    app.include_router(FILES_ROUTER)
+    app.include_router(GENERATED_FILES_ROUTER)
     
     app.add_exception_handler(
         exc_class_or_status_code=RequestValidationError,
